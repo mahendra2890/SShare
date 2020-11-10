@@ -17,8 +17,8 @@ def setup():
     HOST = input("Enter the IP address of server (IPv4): ")
     print()
     print("Enter the dimension [should be same as server]")
-    WIDTH = input("WIDTH: ")
-    HEIGHT = input("HEIGHT: ")
+    WIDTH = int(input("WIDTH: "))
+    HEIGHT = int(input("HEIGHT: "))
 
 def getAll(conn, length):
     buffer = b''
