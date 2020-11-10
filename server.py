@@ -1,59 +1,68 @@
-#in local at game/screenshare/templates
-#this repo at DCproject/SShare
-from socket import socket
-from threading import Thread
-from zlib import compress
+import socket
+import threading
+import zlib
+import mss
 
-from mss import mss
+WIDTH = 768 #default
+HEIGHT = 432 #default
 
+def setup():
+    print()
+    print("Before starting the server, complete the setup: ")
+    global WIDTH
+    global HEIGHT
+    flag = input(f"Do you want to use default width and height as ({WIDTH},{HEIGHT}) (y/n): ")
+    if flag == 'n' or flag == 'N':
+        print("How much portion of the screen do you want to cover while screen-sharing: ")
+        WIDTH = int(input("WIDTH: [would be covered from top-left corner] "))
+        HEIGHT = int(input("HEIGHT: [would be covered from top-left corner] "))
 
-WIDTH = 1366
-HEIGHT = 768
-
-
-def retreive_screenshot(conn):
-    with mss() as sct:
-        # The region to capture
+def handle_client(conn, addr):
+    print(f'Client connected [{addr}]')
+    with mss.mss() as sct:
         rect = {'top': 0, 'left': 0, 'width': WIDTH, 'height': HEIGHT}
 
-        while 'recording':
-            # Capture the screen
+        screenRecord = True
+        while screenRecord:
+
             img = sct.grab(rect)
-            # Tweak the compression level here (0-9)
-            pixels = compress(img.rgb, 6)
 
-            # Send the size of the pixels length
+            pixels = zlib.compress(img.rgb, 6)
+
             size = len(pixels)
+
             size_len = (size.bit_length() + 7) // 8
-            conn.send(bytes([size_len]))
 
-            # Send the actual pixels length
             size_bytes = size.to_bytes(size_len, 'big')
-            conn.send(size_bytes)
+            
+            try:
+                conn.send(bytes([size_len]))
+                conn.send(size_bytes)
+                conn.sendall(pixels)
+            except:
+                print(f'Client Disconnected [{addr}]')
+                screenRecord = False
 
-            # Send pixels
-            conn.sendall(pixels)
-
-
-
-
-def main(host='0.0.0.0', port=5000):
-    # print("FF")
-    sock = socket()
-    sock.bind((host, port))
+def start_server():
+    HOST = socket.gethostbyname(socket.gethostname())
+    PORT = 9999
+    ADDR = (HOST, PORT)
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(ADDR)
     try:
-        sock.listen(5)
-        print('Server started.')
+        server.listen()
+        print(f'Server started on {HOST}:{PORT}')
 
-        while 'connected':
-            conn, addr = sock.accept()
-            print('Client connected IP:', addr)
-            thread = Thread(target=retreive_screenshot, args=(conn,))
+        connected = True
+        while connected:
+            conn, addr = server.accept()
+            thread = threading.Thread(target = handle_client, args = (conn, addr))
             thread.start()
+    
     finally:
-        sock.close()
+        server.close()
 
 
-if __name__  == "__main__":
-    print("w")
-    main()
+if __name__ == "__main__":
+    setup()
+    start_server()
