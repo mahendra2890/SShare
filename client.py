@@ -1,74 +1,78 @@
 import socket
-import threading
 import zlib
-import mss
 import pygame
 
-WIDTH = 1366 #default
-HEIGHT = 768 #default
+WIDTH = 1366 # default
+HEIGHT = 768 # default
+HOST = "127.0.1.1" # default
+PORT = 9999 # default
 
 
 def setup():
-    print()
-    print("Before starting the server, complete the setup: ")
-    global WIDTH
+    global WIDTH 
     global HEIGHT
-    flag = input(f"Do you want to use default width and height as ({WIDTH},{HEIGHT}) (y/n): ")
-    if flag == 'n' or flag == 'N':
-        print("How much portion of the screen do you want to cover while screen-sharing: ")
-        WIDTH = int(input("WIDTH: [would be covered from top-left corner] "))
-        HEIGHT = int(input("HEIGHT: [would be covered from top-left corner] "))
+    global HOST
+    print()
 
-def handle_client(conn, addr):
-    print(f'Client connected [{addr}]')
-    with mss.mss() as sct:
-        rect = {'top': 0, 'left': 0, 'width': WIDTH, 'height': HEIGHT}
+def getAll(conn, length):
+    buffer = b''
+    while len(buffer) < length:
+        data = conn.recv(length - len(buffer))
+        if not data:
+            return data
+        buffer += data
+    return buffer
 
-        screenRecord = True
-        while screenRecord:
+def connect_to_server():
+    global WIDTH 
+    global HEIGHT
+    global HOST
 
-            img = sct.grab(rect)
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
+    
+    fake_screen = screen.copy()
+    ake_screen = screen.copy()
+    ke_screen = screen.copy()
+    
+    clock = pygame.time.Clock()   
 
-            pixels = zlib.compress(img.rgb, 6)
-
-            size = len(pixels)
-
-            size_len = (size.bit_length() + 7) // 8
-
-            size_bytes = size.to_bytes(size_len, 'big')
-            
-            try:
-                conn.send(bytes([size_len]))
-                conn.send(size_bytes)
-                conn.sendall(pixels)
-            except:
-                print(f'Client Disconnected [{addr}]')
-                screenRecord = False
-
-def start_server():
-    HOST = socket.gethostbyname(socket.gethostname())
-    PORT = 9999
     ADDR = (HOST, PORT)
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(ADDR)
     try:
-        server.listen()
-        print(f'Server started on {HOST}:{PORT}')
+        server.connect(ADDR)
+        watching = True
+        lHEIGHT = HEIGHT
+        lWIDTH = WIDTH
+        while watching:
+            # pygame.event.pump()
+            
+            size_len = int.from_bytes(server.recv(1), byteorder='big')
 
-        connected = True
-        while connected:
-            conn, addr = server.accept()
-            thread = threading.Thread(target = handle_client, args = (conn, addr))
-            thread.start()
-    
+            inpsize = int.from_bytes(server.recv(size_len), byteorder='big')
+            
+            pixels = zlib.decompress(getAll(server, inpsize))
+            
+            img = pygame.image.fromstring(pixels, (WIDTH, HEIGHT), 'RGB')
+            
+            fake_screen.blit(img, (0, 0))
+            
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    watching = False
+                    break
+                elif event.type == pygame.VIDEORESIZE:
+                    print(event.dict['size'])
+                    lWIDTH,lHEIGHT = event.dict['size']
+            
+            screen.blit(pygame.transform.scale(fake_screen, (lWIDTH,lHEIGHT)), (0, 0))
+            pygame.display.flip()
+            
+            clock.tick(60)
     finally:
         server.close()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     setup()
-# <<<<<<< HEAD
-    start_server()
-# =======
-    start_server()
-# >>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
+    connect_to_server()
