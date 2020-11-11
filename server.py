@@ -2,9 +2,11 @@ import socket
 import threading
 import zlib
 import mss
+import pygame
 
-WIDTH = 768 #default
-HEIGHT = 432 #default
+WIDTH = 1366 #default
+HEIGHT = 768 #default
+
 
 def setup():
     print()
@@ -65,8 +67,8 @@ def start_server():
 
 if __name__ == "__main__":
     setup()
-<<<<<<< HEAD
+# <<<<<<< HEAD
     start_server()
-=======
+# =======
     start_server()
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
+# >>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
