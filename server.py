@@ -65,4 +65,8 @@ def start_server():
 
 if __name__ == "__main__":
     setup()
+<<<<<<< HEAD
     start_server()
+=======
+    start_server()
+>>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
