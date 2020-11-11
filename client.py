@@ -1,127 +1,74 @@
 import socket
+import threading
 import zlib
+import mss
 import pygame
 
-WIDTH = 768 # default
-HEIGHT = 432 # default
-<<<<<<< HEAD
-HOST = "127.0.1.1" # default
-=======
-HOST = "0.0.0.0" # default
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
-PORT = 9999 # default
+WIDTH = 1366 #default
+HEIGHT = 768 #default
+
 
 def setup():
-    global WIDTH 
+    print()
+    print("Before starting the server, complete the setup: ")
+    global WIDTH
     global HEIGHT
-    global HOST
-    print()
-    print("To connect to server, complete the setup: ")
-    print()
-<<<<<<< HEAD
-    
-    # HOST = input("Enter the IP address of server (IPv4): ")
-    # print()
-    # print("Enter the dimension [should be same as server]")
-    # WIDTH = int(input("WIDTH: "))
-    # HEIGHT = int(input("HEIGHT: "))
-=======
-    HOST = input("Enter the IP address of server (IPv4): ")
-    print()
-    print("Enter the dimension [should be same as server]")
-    WIDTH = int(input("WIDTH: "))
-    HEIGHT = int(input("HEIGHT: "))
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
+    flag = input(f"Do you want to use default width and height as ({WIDTH},{HEIGHT}) (y/n): ")
+    if flag == 'n' or flag == 'N':
+        print("How much portion of the screen do you want to cover while screen-sharing: ")
+        WIDTH = int(input("WIDTH: [would be covered from top-left corner] "))
+        HEIGHT = int(input("HEIGHT: [would be covered from top-left corner] "))
 
-def getAll(conn, length):
-    buffer = b''
-    while len(buffer) < length:
-        data = conn.recv(length - len(buffer))
-        if not data:
-            return data
-        buffer += data
-    return buffer
-<<<<<<< HEAD
+def handle_client(conn, addr):
+    print(f'Client connected [{addr}]')
+    with mss.mss() as sct:
+        rect = {'top': 0, 'left': 0, 'width': WIDTH, 'height': HEIGHT}
 
-def connect_to_server():
-    global WIDTH 
-    global HEIGHT
-    global HOST
+        screenRecord = True
+        while screenRecord:
 
-    pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
-    fake_screen = screen.copy()
+            img = sct.grab(rect)
 
-=======
+            pixels = zlib.compress(img.rgb, 6)
 
-def connect_to_server():
-    pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
-    clock = pygame.time.Clock()   
+            size = len(pixels)
 
+            size_len = (size.bit_length() + 7) // 8
+
+            size_bytes = size.to_bytes(size_len, 'big')
+            
+            try:
+                conn.send(bytes([size_len]))
+                conn.send(size_bytes)
+                conn.sendall(pixels)
+            except:
+                print(f'Client Disconnected [{addr}]')
+                screenRecord = False
+
+def start_server():
+    HOST = socket.gethostbyname(socket.gethostname())
+    PORT = 9999
     ADDR = (HOST, PORT)
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(ADDR)
     try:
-        server.connect(ADDR)
-        watching = True
-<<<<<<< HEAD
-        lHEIGHT = HEIGHT
-        lWIDTH = WIDTH
-=======
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
-        while watching:
-            # pygame.event.pump()
-            
-            size_len = int.from_bytes(server.recv(1), byteorder='big')
+        server.listen()
+        print(f'Server started on {HOST}:{PORT}')
 
-            inpsize = int.from_bytes(server.recv(size_len), byteorder='big')
-            
-            pixels = zlib.decompress(getAll(server, inpsize))
-            
-            img = pygame.image.fromstring(pixels, (WIDTH, HEIGHT), 'RGB')
-            
-            fake_screen.blit(img, (0, 0))
-            
-            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    watching = False
-                    break
-<<<<<<< HEAD
-                elif event.type == pygame.VIDEORESIZE:
-                    print(event.dict['size'])
-                    lWIDTH,lHEIGHT = event.dict['size']
-            # fake_screen = screen.copy()
-            
-            # screen.blit(pygame.transform.scale(fake_screen, event.dict['size']), (0, 0))
-            ake_screen = pygame.transform.scale(fake_screen, (lWIDTH, lHEIGHT))
-            ke_screen = pygame.transform.scale(ake_screen, (WIDTH, HEIGHT))
-            
-            screen.blit(ke_screen,(0,0))
-=======
-            size_len = int.from_bytes(server.recv(1), byteorder='big')
-
-            size = int.from_bytes(server.recv(size_len), byteorder='big')
-            
-            pixels = zlib.decompress(getAll(server, size))
-            
-            img = pygame.image.fromstring(pixels, (WIDTH, HEIGHT), 'RGB')
-            
-            screen.blit(img, (0, 0))
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
-            
-            pygame.display.flip()
-            
-            clock.tick(60)
-<<<<<<< HEAD
+        connected = True
+        while connected:
+            conn, addr = server.accept()
+            thread = threading.Thread(target = handle_client, args = (conn, addr))
+            thread.start()
     
-
-=======
->>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
     finally:
         server.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     setup()
-    connect_to_server()
+# <<<<<<< HEAD
+    start_server()
+# =======
+    start_server()
+# >>>>>>> 0c78b019b8df831a4c9bbd0b23baa196ea57edab
