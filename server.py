@@ -3,8 +3,9 @@ import threading
 import zlib
 import mss
 import tkinter
+import pyautogui
 
-coordinates = {}
+coordinates = {"x1":None, "y1":None, "x2":None, "y2":None}
 
 class ApplicationToSnip():
     def __init__(self, rootApp):
@@ -57,26 +58,27 @@ class ApplicationToSnip():
         self.rect = self.snippingCanvas.create_rectangle(self.x, self.y, 1, 1, outline='red', width=3, fill="blue")
 
     def onMove(self, event):
-        self.coordinates["end"]["x"], self.coordinates["end"]["y"] = (event.x, event.y)
+        self.coordinates["end"]["x"] = self.snippingCanvas.canvasx(event.x)
+        self.coordinates["end"]["y"] = self.snippingCanvas.canvasy(event.y)
         self.snippingCanvas.coords(self.rect, self.coordinates["start"]["x"], self.coordinates["start"]["y"], self.coordinates["end"]["x"], self.coordinates["end"]["y"])
 
 class server:
     def __init__(self, coordinates):
         self.connected = 0
         self.coordinates = coordinates
-        self.WIDTH = self.coordinates["y2"]-self.coordinates["y1"]
-        self.HEIGHT = self.coordinates["x2"]-self.coordinates["x1"]
+        self.HEIGHT = self.coordinates["y2"]-self.coordinates["y1"]
+        self.WIDTH = self.coordinates["x2"]-self.coordinates["x1"]
     
     def handle_client(self, conn, addr):
         print(f'Client connected [{addr}]')
         with mss.mss() as mss_instance:
-            rect = {'top': self.coordinates["x1"], 'left': self.coordinates["y1"], 'width': self.WIDTH, 'height': self.HEIGHT}
+            rect = {'top': self.coordinates["y1"], 'left': self.coordinates["x1"], 'width': self.WIDTH, 'height': self.HEIGHT}
 
             screenRecord = True
             while screenRecord:
 
                 img = mss_instance.grab(rect)
-
+                
                 pixels = zlib.compress(img.rgb, 6)
 
                 size = len(pixels)
@@ -120,5 +122,6 @@ if __name__ == "__main__":
     rootApp = tkinter.Tk(screenName=None, baseName=None, className='Setup', useTk=1)
     app = ApplicationToSnip(rootApp)
     rootApp.mainloop()
+    print(coordinates["Rec"])
     SERVER = server(coordinates["Rec"])
     SERVER.start_server()
