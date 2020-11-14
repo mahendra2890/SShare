@@ -4,7 +4,7 @@ import zlib
 import mss
 import tkinter
 
-coordinates = {"x1":None, "y1":None, "x2":None, "y2":None}
+coordinates = {}
 
 class ApplicationToSnip():
     def __init__(self, rootApp):
@@ -64,8 +64,8 @@ class server:
     def __init__(self, coordinates):
         self.connected = 0
         self.coordinates = coordinates
-        self.WIDTH = self.coordinates["x2"]-self.coordinates["x1"]
-        self.HEIGHT = self.coordinates["y2"]-self.coordinates["y1"]
+        self.WIDTH = self.coordinates["y2"]-self.coordinates["y1"]
+        self.HEIGHT = self.coordinates["x2"]-self.coordinates["x1"]
     
     def handle_client(self, conn, addr):
         print(f'Client connected [{addr}]')
