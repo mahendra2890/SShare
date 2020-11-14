@@ -34,8 +34,8 @@ def getAll(conn, length):
 def connect_to_server():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
-
-    fake_screen = screen.copy()
+    pygame.display.set_caption(HOST," screen ")
+    # fake_screen = screen.copy()
 
     clock = pygame.time.Clock()
 
@@ -56,8 +56,8 @@ def connect_to_server():
             pixels = zlib.decompress(getAll(server, size))
 
             img = pygame.image.fromstring(pixels, (WIDTH, HEIGHT), 'RGB')
-
-            fake_screen.blit(img, (0, 0))
+            fake_screen = pygame.display.set_mode((lWIDTH, lHEIGHT), pygame.RESIZABLE)
+            fake_screen.blit(pygame.transform.scale(img, (lWIDTH, lHEIGHT)), (0, 0))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
